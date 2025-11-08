@@ -4,6 +4,27 @@ from seeder import generate_population, generate_gene, _snap, display_gene
 from fitness import fitness, GRID, DAY_CLOSE, DAY_OPEN
 from crossover import crossover, repair_individual
 import random
+import argparse
+import sys
+
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description="GA scheduler runner with CLI args for individual length and population size"
+    )
+    p.add_argument(
+        "length_individu", type=int, help="Jumlah gen per individu (mis. 10)"
+    )
+    p.add_argument(
+        "length_population", type=int, help="Jumlah individu dalam populasi (mis. 20)"
+    )
+    p.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional random seed untuk reproducibility (default: None)",
+    )
+    return p.parse_args()
 
 
 def mutation(pops: List[Individuals], rate=0.3):
@@ -38,41 +59,93 @@ def mutation(pops: List[Individuals], rate=0.3):
     return pops
 
 
-population = generate_population(int(len(ruang_list) * 9 / 5), 30)
-# print(len(ruang_list))
-# print(population[-1].to_dataframe())
+# population = generate_population(int(len(ruang_list) * 9 / 5), 30)
+# # print(len(ruang_list))
+# # print(population[-1].to_dataframe())
 
 
-fitnesses = fitness(population)
-iteration = 0
-# for x in fitnesses:
-#     print(round(x[0], 2), "\t", x[1])
-step = []
+# fitnesses = fitness(population)
+# iteration = 0
+# # for x in fitnesses:
+# #     print(round(x[0], 2), "\t", x[1])
+# step = []
 
-while max(fitnesses) < 1.0:
-    iteration += 1
-    cross = crossover(fitnesses, population)
-    fitnesses = fitness(cross)
-    print(f"[{iteration}] max fitness from crossover: {max(fitnesses)}")
-    if max(fitnesses) > 0.9:
-        print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
-        step.append(max(fitnesses))
-        index = fitnesses.index(max(fitnesses))
-        print(f"index of fitness 1 individu: {index}")
-        print(cross[index].to_dataframe())
-        cross[index].save_dataframe()
-        break
-    mutate = mutation(cross)
-    fitnesses = fitness(mutate)
-    print(f"[{iteration}] max fitness from mutation: {max(fitnesses)}")
-    if max(fitnesses) >= 0.99:
-        print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
-        step.append(max(fitnesses))
-        index = fitnesses.index(max(fitnesses))
-        print(f"index of fitness 1 individu: {index}")
-        print(mutate[index].to_dataframe())
-        mutate[index].save_dataframe()
-        break
+# while max(fitnesses) < 1.0:
+#     iteration += 1
+#     cross = crossover(fitnesses, population)
+#     fitnesses = fitness(cross)
+#     print(f"[{iteration}] max fitness from crossover: {max(fitnesses)}")
+#     if max(fitnesses) > 0.9:
+#         print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
+#         step.append(max(fitnesses))
+#         index = fitnesses.index(max(fitnesses))
+#         print(f"index of fitness 1 individu: {index}")
+#         print(cross[index].to_dataframe())
+#         cross[index].save_dataframe()
+#         break
+#     mutate = mutation(cross)
+#     fitnesses = fitness(mutate)
+#     print(f"[{iteration}] max fitness from mutation: {max(fitnesses)}")
+#     if max(fitnesses) >= 0.99:
+#         print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
+#         step.append(max(fitnesses))
+#         index = fitnesses.index(max(fitnesses))
+#         print(f"index of fitness 1 individu: {index}")
+#         print(mutate[index].to_dataframe())
+#         mutate[index].save_dataframe()
+#         break
 
 # print(f'({",".join([str(i) for i in step])})')
 # print(f'({",".join([str(i) for i in fitnesses])})')
+
+
+def main():
+    args = parse_args()
+
+    if args.length_individu <= 0 or args.length_population <= 0:
+        print("length_individu dan length_population harus > 0", file=sys.stderr)
+        sys.exit(1)
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    # Mapping argumen:
+    # - arg1 = length_individu
+    # - arg2 = length_population
+    # generate_population(expectation): (length_population, length_individu)
+    population = generate_population(args.length_population, args.length_individu)
+
+    fitnesses = fitness(population)
+    iteration = 0
+    step_vals = []
+
+    while max(fitnesses) < 1.0:
+        iteration += 1
+
+        cross = crossover(fitnesses, population)
+        fitnesses = fitness(cross)
+        print(f"[{iteration}] max fitness from crossover: {max(fitnesses)}")
+        if max(fitnesses) > 0.9:
+            print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
+            step_vals.append(max(fitnesses))
+            index = fitnesses.index(max(fitnesses))
+            print(f"index of fitness 1 individu: {index}")
+            print(cross[index].to_dataframe())
+            cross[index].save_dataframe()
+            break
+
+        mutate = mutation(cross)
+        fitnesses = fitness(mutate)
+        print(f"[{iteration}] max fitness from mutation: {max(fitnesses)}")
+        if max(fitnesses) >= 0.99:
+            print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
+            step_vals.append(max(fitnesses))
+            index = fitnesses.index(max(fitnesses))
+            print(f"index of fitness 1 individu: {index}")
+            print(mutate[index].to_dataframe())
+            mutate[index].save_dataframe()
+            break
+
+
+if __name__ == "__main__":
+    main()
