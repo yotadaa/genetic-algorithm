@@ -102,6 +102,8 @@ def mutation(pops: List[Individuals], rate=0.3):
 def main():
     args = parse_args()
 
+    # print(args.length_individu, args.length_population)
+
     if args.length_individu <= 0 or args.length_population <= 0:
         print("length_individu dan length_population harus > 0", file=sys.stderr)
         sys.exit(1)
@@ -114,14 +116,19 @@ def main():
     # - arg2 = length_population
     # generate_population(expectation): (length_population, length_individu)
     population = generate_population(args.length_population, args.length_individu)
-
-    fitnesses = fitness(population)
+    print("done")
     iteration = 0
     step_vals = []
 
+    fitnesses = fitness(population)
+    if max(fitnesses) > 0.9:
+        print(f"Pada iterasi {int(iteration+1)}: {max(fitnesses)}")
+        index = fitnesses.index(max(fitnesses))
+        print(f"index of fitness 1 individu: {index}")
+        print(population[index].to_dataframe())
+        population[index].save_dataframe()
     while max(fitnesses) < 1.0:
         iteration += 1
-
         cross = crossover(fitnesses, population)
         fitnesses = fitness(cross)
         print(f"[{iteration}] max fitness from crossover: {max(fitnesses)}")
@@ -147,5 +154,5 @@ def main():
             break
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+main()
